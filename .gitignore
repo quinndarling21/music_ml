@@ -1,0 +1,107 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environment
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.mypy_cache/
+poetry.lock
+.pdm.lock
+__pypackages__/
+
+# Installers
+*.deb
+*.rpm
+*.pkg
+*.mpkg
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+nosetests.xml
+test-results/
+junit/
+
+# mypy
+.mypy_cache/
+
+# Protobuf generated files
+*.pb2.py
+*.pb2_grpc.py
+
+# gRPC reflection files
+grpc_reflection/
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# MacOS-specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Node.js dependency folder (if using for frontend)
+node_modules/
+
+# Build directories
+build/
+dist/
+pip-wheel-metadata/
+*.egg-info/
+*.egg/
+
+# Cache and logs
+*.log
+*.bak
+*.swp
+*.swo
+*.swn
+
+# PyCharm
+.idea/
+
+# Local env and sensitive information
+.env
