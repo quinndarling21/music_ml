@@ -1,11 +1,11 @@
 import pytest
 import grpc
-from music_ml.protobuf.services.track_search.track_search_pb2 import (
-    TrackSearchRequest, 
-    TrackSearchResponse,
+from music_ml.protobuf.services.track_info.track_info_pb2 import (
+    TrackInfoRequest, 
+    TrackInfoResponse,
 )
-from music_ml.services.track_search.track_search_server import (
-    TrackSearchService
+from music_ml.services.track_info.track_info_server import (
+    TrackInfoService
 )
 from music_ml.utils.spotify_utils import get_spotify_access_token
 from music_ml.protobuf.common.track_pb2 import Track
@@ -48,8 +48,8 @@ class MockContext:
         return 100  # Simulate time remaining for gRPC call
 
 @pytest.fixture
-def track_search_service():
-    return TrackSearchService()
+def track_info_service():
+    return TrackInfoService()
 
 @pytest.fixture(autouse=True)
 def mock_spotify_token(monkeypatch):
@@ -59,16 +59,16 @@ def mock_spotify_token(monkeypatch):
     """
     monkeypatch.setattr("music_ml.utils.spotify_utils.get_spotify_access_token", lambda: "test_token")
 
-def test_search_track_success(track_search_service, monkeypatch):
+def test_get_track_info_success(track_info_service, monkeypatch):
     # Mock the Spotify API call to return a success response
     monkeypatch.setattr("requests.get", mock_spotify_api_success)
 
-    # Create a TrackSearchRequest
-    request = TrackSearchRequest(spotify_track_id="valid_id")
+    # Create a TrackInfoRequest
+    request = TrackInfoRequest(spotify_track_id="valid_id")
     context = MockContext()
 
-    # Call the SearchTrack method
-    response = track_search_service.SearchTrack(request, context)
+    # Call the GetTrackInfo method
+    response = track_info_service.GetTrackInfo(request, context)
 
     # Assert that the response contains the expected track information
     assert response.track.track_name == "Mock Song"
@@ -78,23 +78,23 @@ def test_search_track_success(track_search_service, monkeypatch):
     assert response.track.valence == pytest.approx(0.6)
     assert response.track.danceability == pytest.approx(0.7)
 
-def test_search_track_error(track_search_service, monkeypatch):
+def test_get_track_info_error(track_info_service, monkeypatch):
     # Mock the Spotify API call to return an error response
     monkeypatch.setattr("requests.get", mock_spotify_api_error)
 
-    # Create a TrackSearchRequest
-    request = TrackSearchRequest(spotify_track_id="invalid_id")
+    # Create a TrackInfoRequest
+    request = TrackInfoRequest(spotify_track_id="invalid_id")
     context = MockContext()
 
-    # Call the SearchTrack method and expect a gRPC exception due to API failure
+    # Call the GetTrackInfo method and expect a gRPC exception due to API failure
     with pytest.raises(Exception) as excinfo:
-        track_search_service.SearchTrack(request, context)
+        track_info_service.GetTrackInfo(request, context)
     
     # Assert that the exception raised contains the gRPC abort message and details
     assert "gRPC aborted" in str(excinfo.value)
     assert "Invalid or expired Spotify token" in str(excinfo.value)
 
-def test_search_track_token_refresh(track_search_service, monkeypatch):
+def test_get_track_info_token_refresh(track_info_service, monkeypatch):
     # Mock the first Spotify API call to return a 401 (expired token)
     def mock_spotify_api_first_fail(*args, **kwargs):
         class MockResponse:
@@ -128,12 +128,12 @@ def test_search_track_token_refresh(track_search_service, monkeypatch):
     # Mock the token refresh
     monkeypatch.setattr("music_ml.utils.spotify_utils.get_spotify_access_token", lambda: "new_test_token")
 
-    # Create a TrackSearchRequest
-    request = TrackSearchRequest(spotify_track_id="valid_id")
+    # Create a TrackInfoRequest
+    request = TrackInfoRequest(spotify_track_id="valid_id")
     context = MockContext()
 
-    # Call the SearchTrack method and expect it to retry and succeed
-    response = track_search_service.SearchTrack(request, context)
+    # Call the GetTrackInfo method and expect it to retry and succeed
+    response = track_info_service.GetTrackInfo(request, context)
 
     # Assert that the response contains the expected track information
     assert response.track.track_name == "Mock Song"

@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from music_ml.protobuf.services.track_search import track_search_pb2 as services_dot_track__search_dot_track__search__pb2
+from music_ml.protobuf.services.track_info import track_info_pb2 as services_dot_track__info_dot_track__info__pb2
 
 GRPC_GENERATED_VERSION = '1.66.1'
 GRPC_VERSION = grpc.__version__
@@ -18,14 +18,14 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in services/track_search/track_search_pb2_grpc.py depends on'
+        + f' but the generated code in services/track_info/track_info_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
-class TrackSearchServiceStub(object):
+class TrackInfoServiceStub(object):
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -34,43 +34,43 @@ class TrackSearchServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.SearchTrack = channel.unary_unary(
-                '/track_search.TrackSearchService/SearchTrack',
-                request_serializer=services_dot_track__search_dot_track__search__pb2.TrackSearchRequest.SerializeToString,
-                response_deserializer=services_dot_track__search_dot_track__search__pb2.TrackSearchResponse.FromString,
+        self.GetTrackInfo = channel.unary_unary(
+                '/track_info.TrackInfoService/GetTrackInfo',
+                request_serializer=services_dot_track__info_dot_track__info__pb2.TrackInfoRequest.SerializeToString,
+                response_deserializer=services_dot_track__info_dot_track__info__pb2.TrackInfoResponse.FromString,
                 _registered_method=True)
 
 
-class TrackSearchServiceServicer(object):
+class TrackInfoServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def SearchTrack(self, request, context):
+    def GetTrackInfo(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
 
-def add_TrackSearchServiceServicer_to_server(servicer, server):
+def add_TrackInfoServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'SearchTrack': grpc.unary_unary_rpc_method_handler(
-                    servicer.SearchTrack,
-                    request_deserializer=services_dot_track__search_dot_track__search__pb2.TrackSearchRequest.FromString,
-                    response_serializer=services_dot_track__search_dot_track__search__pb2.TrackSearchResponse.SerializeToString,
+            'GetTrackInfo': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetTrackInfo,
+                    request_deserializer=services_dot_track__info_dot_track__info__pb2.TrackInfoRequest.FromString,
+                    response_serializer=services_dot_track__info_dot_track__info__pb2.TrackInfoResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'track_search.TrackSearchService', rpc_method_handlers)
+            'track_info.TrackInfoService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('track_search.TrackSearchService', rpc_method_handlers)
+    server.add_registered_method_handlers('track_info.TrackInfoService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
-class TrackSearchService(object):
+class TrackInfoService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def SearchTrack(request,
+    def GetTrackInfo(request,
             target,
             options=(),
             channel_credentials=None,
@@ -83,9 +83,9 @@ class TrackSearchService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/track_search.TrackSearchService/SearchTrack',
-            services_dot_track__search_dot_track__search__pb2.TrackSearchRequest.SerializeToString,
-            services_dot_track__search_dot_track__search__pb2.TrackSearchResponse.FromString,
+            '/track_info.TrackInfoService/GetTrackInfo',
+            services_dot_track__info_dot_track__info__pb2.TrackInfoRequest.SerializeToString,
+            services_dot_track__info_dot_track__info__pb2.TrackInfoResponse.FromString,
             options,
             channel_credentials,
             insecure,
