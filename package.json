@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "protoc-gen-js": "^3.21.2"
+  }
+}
