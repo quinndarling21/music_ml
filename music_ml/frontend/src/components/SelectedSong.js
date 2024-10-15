@@ -1,20 +1,35 @@
 import React from "react";
-import { Typography } from "@mui/material";
+import { Typography, Card, CardContent, CardMedia, Box } from "@mui/material";
 
 const SelectedSong = ({ song }) => {
   return (
-    <div className="selected-song">
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center', // Centers horizontally
+        alignItems: 'center', // Centers vertically
+        padding: 2, // Add padding around the card
+      }}
+    >
       {song ? (
-        <>
-          <Typography variant="h6">Selected Song:</Typography>
-          <Typography variant="body1">
-            {song.track_name} by {song.artist}
-          </Typography>
-        </>
+        <Card sx={{ 
+          padding: 2,
+          backgroundColor: '#654873', // Dark background
+          color: 'white'
+          }}>
+          <CardContent>
+            <Typography gutterBottom variant="h5" component="div">
+              {song.track_name}
+            </Typography>
+            <Typography variant="body2">
+              {song.artist}
+            </Typography>
+          </CardContent>
+        </Card>
       ) : (
         <Typography variant="body1">No song selected.</Typography>
       )}
-    </div>
+    </Box>
   );
 };
 

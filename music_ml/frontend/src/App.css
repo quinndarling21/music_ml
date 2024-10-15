@@ -40,6 +40,12 @@
   }
 }
 
+body {
+  background-color: #121212; /* Dark background */
+  color: white; /* Light text color */
+  margin: 0;
+  padding: 0;
+}
 
 .search-bar {
   display: flex;
