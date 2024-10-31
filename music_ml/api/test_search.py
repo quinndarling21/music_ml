@@ -3,6 +3,9 @@ import requests
 from flask import Flask
 from music_ml.api.search import search_bp
 from unittest.mock import patch
+from music_ml.models.track import Track
+from music_ml.models.artist import Artist
+
 
 @pytest.fixture
 def client():
@@ -17,18 +20,13 @@ def client():
 @patch('music_ml.api.search.search_spotify_tracks')
 def test_search_tracks_success(mock_search_spotify_tracks, client):
     # Mock the response from the search_spotify_tracks function
-    mock_search_spotify_tracks.return_value = {
-        'tracks': {
-            'items': [
-                {
-                    'id': 'track123',
-                    'name': 'Test Track',
-                    'artists': [{'name': 'Test Artist'}]
-                }
-            ],
-            'total': 1
-        }
-    }
+    mock_search_spotify_tracks.return_value = [
+        Track(
+            spotify_track_id='track123',
+            track_name='Test Track',
+            artist=Artist(spotify_artist_id='id', name='Test Artist')
+        )
+    ]
 
     # Make a request to the /search endpoint
     response = client.get('/search?query=test&limit=1')
@@ -42,7 +40,7 @@ def test_search_tracks_success(mock_search_spotify_tracks, client):
     # Assert that the response contains the expected data
     assert json_data['tracks'][0]['spotify_track_id'] == 'track123'
     assert json_data['tracks'][0]['track_name'] == 'Test Track'
-    assert json_data['tracks'][0]['artist'] == 'Test Artist'
+    assert json_data['tracks'][0]['artist']['name'] == 'Test Artist'
     assert json_data['total_results'] == 1
 
 @patch('music_ml.api.search.search_spotify_tracks')

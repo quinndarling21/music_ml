@@ -19,7 +19,7 @@ def test_search_spotify_tracks_success(mock_requests_get, mock_get_access_token)
                 {
                     'id': 'track123',
                     'name': 'Test Track',
-                    'artists': [{'name': 'Test Artist'}]
+                    'artists': [{'name': 'Test Artist', 'id':'id'}]
                 }
             ]
         }
@@ -39,9 +39,10 @@ def test_search_spotify_tracks_success(mock_requests_get, mock_get_access_token)
     )
     
     # Assert the function returns the expected result
-    assert result['tracks']['items'][0]['id'] == 'track123'
-    assert result['tracks']['items'][0]['name'] == 'Test Track'
-    assert result['tracks']['items'][0]['artists'][0]['name'] == 'Test Artist'
+    assert result[0].spotify_track_id == 'track123'
+    assert result[0].track_name == 'Test Track'
+    assert result[0].artist.name == 'Test Artist'
+    assert result[0].artist.spotify_artist_id == 'id'   
 
 # Test for token refresh if the first request fails with 401
 @patch('music_ml.services.spotify_service.get_spotify_access_token')
@@ -63,7 +64,7 @@ def test_search_spotify_tracks_token_refresh(mock_requests_get, mock_get_access_
                 {
                     'id': 'track123',
                     'name': 'Test Track After Refresh',
-                    'artists': [{'name': 'Test Artist'}]
+                    'artists': [{'name': 'Test Artist', 'id':'id'}]
                 }
             ]
         }
@@ -85,9 +86,9 @@ def test_search_spotify_tracks_token_refresh(mock_requests_get, mock_get_access_
     )
 
     # Assert the function returns the expected result after token refresh
-    assert result['tracks']['items'][0]['id'] == 'track123'
-    assert result['tracks']['items'][0]['name'] == 'Test Track After Refresh'
-    assert result['tracks']['items'][0]['artists'][0]['name'] == 'Test Artist'
+    assert result[0].spotify_track_id == 'track123'
+    assert result[0].track_name == 'Test Track After Refresh'
+    assert result[0].artist.name == 'Test Artist'
 
 # Test for non-200 responses
 @patch('music_ml.services.spotify_service.get_spotify_access_token')

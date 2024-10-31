@@ -22,7 +22,7 @@ const SelectedSong = ({ song }) => {
               {song.track_name}
             </Typography>
             <Typography variant="body2">
-              {song.artist}
+              {song.artist.name}
             </Typography>
           </CardContent>
         </Card>

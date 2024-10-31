@@ -1,5 +1,5 @@
 import requests
-from music_ml.utils.spotify_utils import get_spotify_access_token
+from music_ml.utils.spotify_utils import get_spotify_access_token, load_spotify_tracks
 
 def search_spotify_tracks(query, limit=20):
     """Function to search tracks from Spotify API."""
@@ -21,7 +21,7 @@ def search_spotify_tracks(query, limit=20):
 
     # Handle response
     if response.status_code == 200:
-        return response.json()
+        return load_spotify_tracks(response.json())
     
     # Raise an exception for non-200 responses
     response.raise_for_status()

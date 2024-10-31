@@ -2,6 +2,12 @@ import os
 import requests
 from dotenv import load_dotenv
 from base64 import b64encode
+import json
+from typing import List
+
+from music_ml.models.track import Track
+from music_ml.models.artist import Artist
+
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -41,3 +47,25 @@ def get_spotify_access_token():
         return token_info['access_token']
     else:
         raise Exception(f"Failed to retrieve access token: {response.status_code} - {response.text}")
+    
+def load_spotify_artist(spotify_artist_json: json) -> Artist:
+    return Artist(
+        name=spotify_artist_json['name'],
+        spotify_artist_id=spotify_artist_json['id']
+    )
+    
+def load_spotify_tracks(spotify_response_json: json) -> List[Track]:
+    tracks = [
+            Track(
+                spotify_track_id=item['id'],
+                track_name=item['name'],
+                artist=load_spotify_artist(item['artists'][0]),
+                genre="",  # Spotify API doesn't return genre directly, so you may add a placeholder
+                tempo=0.0,  # Placeholder, update if this info is available
+                energy=0.0,
+                valence=0.0,
+                danceability=0.0
+            )
+            for item in spotify_response_json['tracks']['items']
+        ]
+    return tracks

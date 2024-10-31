@@ -19,7 +19,7 @@ const SongList = ({ songs = [], onSongSelect }) => {
                 {song.track_name}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ color: '#b3b3b3' }}>
-                {song.artist}
+                {song.artist.name}
               </Typography>
             </CardContent>
           </CardActionArea>

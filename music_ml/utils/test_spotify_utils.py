@@ -1,5 +1,12 @@
 import os
-from music_ml.utils.spotify_utils import get_spotify_access_token
+from music_ml.utils.spotify_utils import (
+    get_spotify_access_token,
+    load_spotify_artist,
+    load_spotify_tracks
+)
+from music_ml.models.artist import Artist
+from music_ml.models.track import Track
+
 from dotenv import load_dotenv
 import pytest
 
@@ -59,3 +66,26 @@ def test_get_spotify_access_token_error(monkeypatch):
         get_spotify_access_token()
 
     assert "Failed to retrieve access token" in str(exc_info.value)
+
+def test_load_spotify_artist():
+    artist_json = {'name': 'Test Artist', 'id':'id'}
+    artist = load_spotify_artist(artist_json)
+    assert artist == Artist(name='Test Artist', spotify_artist_id='id')
+
+def test_load_spotify_tracks():
+    search_response_json = {
+            'tracks': {
+                'items': [
+                    {
+                        'id': 'track123',
+                        'name': 'Test Track',
+                        'artists': [{'name': 'Test Artist', 'id':'id'}]
+                    }
+                ]
+            }
+        }
+    tracks = load_spotify_tracks(search_response_json)
+    assert tracks[0].spotify_track_id == 'track123'
+    assert tracks[0].track_name == 'Test Track'
+    assert tracks[0].artist.name == 'Test Artist'
+    assert tracks[0].artist.spotify_artist_id == 'id'
