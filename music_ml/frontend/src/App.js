@@ -4,12 +4,14 @@ import SearchBar from "./components/SearchBar";
 import SongList from "./components/SongList";
 import SelectedSong from "./components/SelectedSong";
 import { searchSongs } from "./services/searchService";
+import { generatePlaylist } from "./services/generatePlaylist";
 import { Typography, Box, Button } from "@mui/material";
 
 const App = () => {
   const [query, setQuery] = useState("");
   const [songs, setSongs] = useState([]);
   const [selectedSong, setSelectedSong] = useState(null);
+  const [playlist, setPlaylist] = useState([]);
 
   const handleSearch = async () => {
     try {
@@ -22,6 +24,24 @@ const App = () => {
 
   const handleSongSelect = (song) => {
     setSelectedSong(song);
+  };
+
+  const handleGeneratePlaylist = async () => {
+    if (!selectedSong) {
+      alert("Please select a song first.");
+      return;
+    }
+    try {
+      const result = await generatePlaylist(selectedSong.spotify_track_id);
+      setPlaylist(result.playlist);
+    } catch (error) {
+      console.error("Error generating playlist:", error);
+    }
+  };
+
+  const handleBackToSearch = () => {
+    setPlaylist([]);
+    setSelectedSong(null);
   };
 
   return (
@@ -55,23 +75,51 @@ const App = () => {
               boxShadow: '0px 6px 8px rgba(0, 0, 0, 0.3)',
             },
           }}
+          onClick={handleGeneratePlaylist}
         >
           Generate Playlist
         </Button>
       </Box>
 
-      {/* Bordered section for search bar and song list */}
-      <Box
-        sx={{
-          border: '1px solid #b3b3b3',  // Thin light border
-          borderRadius: 2,              // Rounded corners (optional)
-          padding: 2,                   // Space inside the box
-          marginTop: 4,                 // Space above the box
-        }}
-      >
-        <SearchBar query={query} setQuery={setQuery} onSearch={handleSearch} />
-        <SongList songs={songs} onSongSelect={handleSongSelect} />
-      </Box>
+      {playlist.length === 0 ? (
+        <Box
+          sx={{
+            border: '1px solid #b3b3b3',  // Thin light border
+            borderRadius: 2,              // Rounded corners (optional)
+            padding: 2,                   // Space inside the box
+            marginTop: 4,                 // Space above the box
+          }}
+        >
+          <SearchBar query={query} setQuery={setQuery} onSearch={handleSearch} />
+          <SongList songs={songs} onSongSelect={handleSongSelect} />
+        </Box>
+      ) : (
+        // Display the playlist
+        <Box
+          sx={{
+            border: '1px solid #b3b3b3',  // Thin light border
+            borderRadius: 2,              // Rounded corners (optional)
+            padding: 2,                   // Space inside the box
+            marginTop: 4,                 // Space above the box
+          }}
+        >
+          <Typography variant="h6" gutterBottom>
+            Generated Playlist
+          </Typography>
+          <SongList songs={playlist['tracks']} onSongSelect={handleSongSelect} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', marginY: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={handleBackToSearch}
+              sx={{
+                textTransform: 'none',
+              }}
+            >
+              Back to Search
+            </Button>
+          </Box>
+        </Box>
+      )}
     </div>
   );
 };

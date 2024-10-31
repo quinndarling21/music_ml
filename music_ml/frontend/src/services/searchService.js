@@ -9,7 +9,6 @@ export const searchSongs = async (query, limit = 10) => {
       },
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/grpc-web+json'
       }
     });
 
