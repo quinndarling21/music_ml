@@ -1,7 +1,46 @@
-import React from 'react';
-import { Box, Typography, Grid, Card, CardContent, CardMedia, CardActionArea, Button } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, Grid, Card, CardContent, CardMedia, CardActionArea, Button, Snackbar, Alert } from '@mui/material';
+import { exportPlaylist } from '../services/generatePlaylist';
 
 const PlaylistSection = ({ playlist, onSongSelect, isAuthenticated }) => {
+  const [exporting, setExporting] = useState(false);
+  const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
+
+  const handleExport = async () => {
+    if (!playlist || !playlist.tracks || !isAuthenticated) return;
+    
+    setExporting(true);
+    try {
+      const result = await exportPlaylist(playlist.tracks);
+      setNotification({
+        open: true,
+        message: 'Playlist exported successfully! Opening Spotify...',
+        severity: 'success'
+      });
+      
+      // Add a delay before opening Spotify to ensure playlist is ready
+      setTimeout(() => {
+        window.open(result.playlist_url, '_blank');
+      }, 2000);
+      
+    } catch (error) {
+      let errorMessage = 'Failed to export playlist';
+      if (error.response?.data?.error) {
+        errorMessage += ': ' + error.response.data.error;
+      } else if (error.message) {
+        errorMessage += ': ' + error.message;
+      }
+      
+      setNotification({
+        open: true,
+        message: errorMessage,
+        severity: 'error'
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <Box sx={{ 
       display: 'flex', 
@@ -21,9 +60,10 @@ const PlaylistSection = ({ playlist, onSongSelect, isAuthenticated }) => {
         
         <Button
           variant="contained"
-          disabled={!playlist || !isAuthenticated}
+          disabled={!playlist || !isAuthenticated || exporting}
+          onClick={handleExport}
           sx={{
-            backgroundColor: '#1DB954',  // Spotify green
+            backgroundColor: '#1DB954',
             color: '#fff',
             textTransform: 'none',
             fontSize: '0.9rem',
@@ -37,7 +77,7 @@ const PlaylistSection = ({ playlist, onSongSelect, isAuthenticated }) => {
             }
           }}
         >
-          {isAuthenticated ? 'Export to Spotify' : 'Login to Export'}
+          {exporting ? 'Exporting...' : (isAuthenticated ? 'Export to Spotify' : 'Login to Export')}
         </Button>
       </Box>
       
@@ -146,6 +186,16 @@ const PlaylistSection = ({ playlist, onSongSelect, isAuthenticated }) => {
           </Typography>
         )}
       </Box>
+
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={() => setNotification({ ...notification, open: false })}
+      >
+        <Alert severity={notification.severity} onClose={() => setNotification({ ...notification, open: false })}>
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

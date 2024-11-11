@@ -4,6 +4,10 @@ import requests
 from urllib.parse import urlencode
 import logging
 from dotenv import load_dotenv
+from music_ml.models.track import Track
+from music_ml.models.artist import Artist
+from music_ml.models.playlist import Playlist
+from music_ml.services.spotify_service import create_spotify_playlist
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -115,3 +119,41 @@ def get_user_info():
         return jsonify(response.json())
     else:
         return jsonify({'error': 'Failed to get user info'}), response.status_code
+
+@auth_bp.route('/export-playlist', methods=['POST'])
+def export_playlist():
+    """Export a playlist to user's Spotify account"""
+    if 'access_token' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    data = request.get_json()
+    if not data or 'tracks' not in data:
+        return jsonify({'error': 'No tracks provided'}), 400
+    
+    try:
+        # Convert the JSON data back to Track objects
+        tracks = []
+        for track_data in data['tracks']:
+            artist_data = track_data.pop('artist')
+            artist = Artist(**artist_data)
+            track = Track(artist=artist, **track_data)
+            tracks.append(track)
+        
+        # Create a Playlist object
+        playlist = Playlist(tracks=tracks)
+        
+        # Generate playlist name based on seed track
+        playlist_name = f"Inspired by {playlist.tracks[0].track_name}"
+        description = f"A playlist inspired by {playlist.tracks[0].track_name} by {playlist.tracks[0].artist.name}"
+        
+        # Create the playlist
+        result = create_spotify_playlist(playlist_name, playlist.tracks, description)
+        
+        return jsonify({
+            'success': True,
+            'playlist_url': result['external_urls']['spotify']
+        })
+        
+    except Exception as e:
+        logging.error(f"Failed to export playlist: {str(e)}")
+        return jsonify({'error': str(e)}), 500

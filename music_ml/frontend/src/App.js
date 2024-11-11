@@ -92,7 +92,7 @@ const AppContent = () => {
               flexShrink: 0 // Prevent title from shrinking
             }}
           >
-            Generate a playlist that matches the vibe of a single song.
+            Generate a playlist inspired by a single song.
           </Typography>
 
           <Box sx={{ 
