@@ -1,17 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 import "./App.css";
 import SearchBar from "./components/SearchBar";
 import SongList from "./components/SongList";
 import SelectedSong from "./components/SelectedSong";
+import SpotifyLoginButton from "./components/SpotifyLoginButton";
+import SpotifyCallback from "./components/SpotifyCallback";
 import { searchSongs } from "./services/searchService";
 import { generatePlaylist } from "./services/generatePlaylist";
+import { authService } from "./services/authService";
 import { Typography, Box, Button } from "@mui/material";
 
-const App = () => {
+const AppContent = () => {
   const [query, setQuery] = useState("");
   const [songs, setSongs] = useState([]);
   const [selectedSong, setSelectedSong] = useState(null);
   const [playlist, setPlaylist] = useState([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const authenticated = await authService.checkAuthStatus();
+      setIsAuthenticated(authenticated);
+    } catch (error) {
+      console.error("Auth check error:", error);
+    }
+  };
 
   const handleSearch = async () => {
     try {
@@ -46,24 +65,29 @@ const App = () => {
 
   return (
     <div className="App">
-      <Typography variant="h4" gutterBottom>
-        Playlist Generator
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 2 }}>
+        <Typography variant="h4">
+          Playlist Generator
+        </Typography>
+        <SpotifyLoginButton 
+          isAuthenticated={isAuthenticated}
+          onLogoutSuccess={() => setIsAuthenticated(false)}
+        />
+      </Box>
+
       <Typography variant="h6" gutterBottom>
         Generate a playlist that matches the vibe of a single song.
       </Typography>
 
-      {/* Display selected song */}
       <SelectedSong song={selectedSong} />
 
-      {/* Metallic Silver Button */}
       <Box sx={{ display: 'flex', justifyContent: 'center', marginY: 3 }}>
         <Button
           variant="contained"
           sx={{
-            background: 'linear-gradient(145deg, #b5b5b5, #8c8c8c)', // Metallic gradient
+            background: 'linear-gradient(145deg, #b5b5b5, #8c8c8c)',
             color: '#fff',
-            border: '1px solid #d4d4d4', // Silver border
+            border: '1px solid #d4d4d4',
             borderRadius: '5px',
             paddingX: 4,
             paddingY: 1.5,
@@ -71,7 +95,7 @@ const App = () => {
             textTransform: 'none',
             fontSize: '16px',
             '&:hover': {
-              background: 'linear-gradient(145deg, #c2c2c2, #7e7e7e)', // Lighter on hover
+              background: 'linear-gradient(145deg, #c2c2c2, #7e7e7e)',
               boxShadow: '0px 6px 8px rgba(0, 0, 0, 0.3)',
             },
           }}
@@ -82,27 +106,12 @@ const App = () => {
       </Box>
 
       {playlist.length === 0 ? (
-        <Box
-          sx={{
-            border: '1px solid #b3b3b3',  // Thin light border
-            borderRadius: 2,              // Rounded corners (optional)
-            padding: 2,                   // Space inside the box
-            marginTop: 4,                 // Space above the box
-          }}
-        >
+        <Box sx={{ border: '1px solid #b3b3b3', borderRadius: 2, padding: 2, marginTop: 4 }}>
           <SearchBar query={query} setQuery={setQuery} onSearch={handleSearch} />
           <SongList songs={songs} onSongSelect={handleSongSelect} />
         </Box>
       ) : (
-        // Display the playlist
-        <Box
-          sx={{
-            border: '1px solid #b3b3b3',  // Thin light border
-            borderRadius: 2,              // Rounded corners (optional)
-            padding: 2,                   // Space inside the box
-            marginTop: 4,                 // Space above the box
-          }}
-        >
+        <Box sx={{ border: '1px solid #b3b3b3', borderRadius: 2, padding: 2, marginTop: 4 }}>
           <Typography variant="h6" gutterBottom>
             Generated Playlist
           </Typography>
@@ -111,9 +120,7 @@ const App = () => {
             <Button
               variant="outlined"
               onClick={handleBackToSearch}
-              sx={{
-                textTransform: 'none',
-              }}
+              sx={{ textTransform: 'none' }}
             >
               Back to Search
             </Button>
@@ -121,6 +128,17 @@ const App = () => {
         </Box>
       )}
     </div>
+  );
+};
+
+const App = () => {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/callback" element={<SpotifyCallback />} />
+        <Route path="/" element={<AppContent />} />
+      </Routes>
+    </Router>
   );
 };
 

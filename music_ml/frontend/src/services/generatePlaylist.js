@@ -13,7 +13,7 @@ export const generatePlaylist = async (spotifyTrackId) => {
 
     return response.data;
   } catch (error) {
-    console.error("Error generating playlist:", error.response ? error.response.data : error.message);
+    console.error("Error generating playlist:", error.response?.data || error.message);
     throw error;
   }
 };

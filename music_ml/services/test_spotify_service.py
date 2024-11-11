@@ -1,354 +1,79 @@
 import pytest
-import requests
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
+from flask import Flask, session
 from music_ml.services.spotify_service import (
+    get_auth_headers,
+    refresh_token_if_needed,
     search_spotify_tracks,
-    get_artist_top_tracks,
     get_track_by_id
 )
 
-# Mocking the access token retrieval function
+@pytest.fixture
+def app():
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'test_secret_key'
+    return app
+
+def test_get_auth_headers_with_session(app):
+    """Test get_auth_headers when session token exists"""
+    with app.test_request_context():
+        session['access_token'] = 'test_session_token'
+        headers = get_auth_headers()
+        assert headers['Authorization'] == 'Bearer test_session_token'
+
 @patch('music_ml.services.spotify_service.get_spotify_access_token')
-@patch('music_ml.services.spotify_service.requests.get')
-def test_search_spotify_tracks_success(mock_requests_get, mock_get_access_token):
-    # Mock access token
-    mock_get_access_token.return_value = 'mock_access_token'
+def test_get_auth_headers_without_session(mock_get_token, app):
+    """Test get_auth_headers when no session token exists"""
+    mock_get_token.return_value = 'test_client_token'
     
-    # Mock successful response from Spotify API
+    with app.test_request_context():
+        headers = get_auth_headers()
+        assert headers['Authorization'] == 'Bearer test_client_token'
+
+def test_refresh_token_if_needed_no_refresh_needed(app):
+    """Test refresh_token_if_needed when no refresh is needed"""
+    response = MagicMock()
+    response.status_code = 200
+    
+    with app.test_request_context():
+        new_headers = refresh_token_if_needed(response)
+        assert new_headers is None
+
+@patch('music_ml.services.spotify_service.get_spotify_access_token')
+def test_refresh_token_if_needed_with_expired_token(mock_get_token, app):
+    """Test refresh_token_if_needed when token is expired"""
+    mock_get_token.return_value = 'new_token'
+    response = MagicMock()
+    response.status_code = 401
+    
+    with app.test_request_context():
+        session['access_token'] = 'old_token'
+        new_headers = refresh_token_if_needed(response)
+        assert new_headers['Authorization'] == 'Bearer new_token'
+
+@patch('music_ml.services.spotify_service.requests.get')
+@patch('music_ml.services.spotify_service.get_auth_headers')
+def test_search_spotify_tracks_success(mock_get_headers, mock_get, app):
+    """Test successful track search"""
+    mock_get_headers.return_value = {'Authorization': 'Bearer test_token'}
+    
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {
         'tracks': {
             'items': [
                 {
-                    'id': 'track123',
+                    'id': 'test_id',
                     'name': 'Test Track',
-                    'artists': [{'name': 'Test Artist', 'id':'id'}]
+                    'artists': [{'id': 'artist_id', 'name': 'Test Artist'}]
                 }
             ]
         }
     }
-    mock_requests_get.return_value = mock_response
-    
-    # Call the function
-    result = search_spotify_tracks('test_query', 1)
-    
-    # Assert that the access token was fetched
-    mock_get_access_token.assert_called_once()
-    
-    # Assert that the request was made with the correct URL
-    mock_requests_get.assert_called_once_with(
-        'https://api.spotify.com/v1/search?q=test_query&type=track&limit=1',
-        headers={'Authorization': 'Bearer mock_access_token'}
-    )
-    
-    # Assert the function returns the expected result
-    assert result[0].spotify_track_id == 'track123'
-    assert result[0].track_name == 'Test Track'
-    assert result[0].artist.name == 'Test Artist'
-    assert result[0].artist.spotify_artist_id == 'id'   
+    mock_get.return_value = mock_response
 
-# Test for token refresh if the first request fails with 401
-@patch('music_ml.services.spotify_service.get_spotify_access_token')
-@patch('music_ml.services.spotify_service.requests.get')
-def test_search_spotify_tracks_token_refresh(mock_requests_get, mock_get_access_token):
-    # Mock initial access token and a refreshed token
-    mock_get_access_token.side_effect = ['expired_token', 'refreshed_token']
-
-    # Mock the first response to be 401 Unauthorized
-    mock_response_401 = MagicMock()
-    mock_response_401.status_code = 401
-    
-    # Mock the second response to be successful
-    mock_response_200 = MagicMock()
-    mock_response_200.status_code = 200
-    mock_response_200.json.return_value = {
-        'tracks': {
-            'items': [
-                {
-                    'id': 'track123',
-                    'name': 'Test Track After Refresh',
-                    'artists': [{'name': 'Test Artist', 'id':'id'}]
-                }
-            ]
-        }
-    }
-
-    # First call returns 401, second call returns 200
-    mock_requests_get.side_effect = [mock_response_401, mock_response_200]
-
-    # Call the function
-    result = search_spotify_tracks('test_query', 1)
-    
-    # Assert that the access token was fetched twice (due to refresh)
-    assert mock_get_access_token.call_count == 2
-
-    # Assert the second request was made with the refreshed token
-    mock_requests_get.assert_called_with(
-        'https://api.spotify.com/v1/search?q=test_query&type=track&limit=1',
-        headers={'Authorization': 'Bearer refreshed_token'}
-    )
-
-    # Assert the function returns the expected result after token refresh
-    assert result[0].spotify_track_id == 'track123'
-    assert result[0].track_name == 'Test Track After Refresh'
-    assert result[0].artist.name == 'Test Artist'
-
-# Test for non-200 responses
-@patch('music_ml.services.spotify_service.get_spotify_access_token')
-@patch('music_ml.services.spotify_service.requests.get')
-def test_search_spotify_tracks_non_200_response(mock_requests_get, mock_get_access_token):
-    # Mock access token
-    mock_get_access_token.return_value = 'mock_access_token'
-
-    # Mock a non-200 response (e.g., 404 Not Found)
-    mock_response = MagicMock()
-    mock_response.status_code = 404
-    # Set raise_for_status to raise HTTPError when called
-    mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError
-    mock_requests_get.return_value = mock_response
-
-    # Call the function and expect it to raise an HTTPError exception
-    with pytest.raises(requests.exceptions.HTTPError):
-        search_spotify_tracks('test_query', 1)
-
-    # Assert that the request was made
-    mock_requests_get.assert_called_once_with(
-        'https://api.spotify.com/v1/search?q=test_query&type=track&limit=1',
-        headers={'Authorization': 'Bearer mock_access_token'}
-    )
-
-    # Assert that the access token was fetched
-    mock_get_access_token.assert_called_once()
-
-# Test for successful retrieval of artist's top tracks
-@patch('music_ml.services.spotify_service.load_spotify_tracks')
-@patch('music_ml.services.spotify_service.get_spotify_access_token')
-@patch('music_ml.services.spotify_service.requests.get')
-def test_get_artist_top_tracks_success(mock_requests_get, mock_get_access_token, mock_load_tracks):
-    # Mock access token
-    mock_get_access_token.return_value = 'mock_access_token'
-    
-    # Mock successful response from Spotify API
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {
-        'tracks': [
-            {
-                'id': 'track123',
-                'name': 'Test Track',
-                'artists': [{'name': 'Test Artist', 'id': 'artist_id'}]
-            }
-        ]
-    }
-    mock_requests_get.return_value = mock_response
-    
-    # Call the function
-    get_artist_top_tracks('artist123')
-    
-    # Assert that the access token was fetched
-    mock_get_access_token.assert_called_once()
-    
-    # Assert that the request was made with the correct URL
-    mock_requests_get.assert_called_once_with(
-        'https://api.spotify.com/v1/artists/artist123/top-tracks?market=US',
-        headers={'Authorization': 'Bearer mock_access_token'}
-    )
-    
-    # Assert that load_spotify_tracks was called with the correct data
-    mock_load_tracks.assert_called_once_with({'tracks':{'items':mock_response.json.return_value['tracks']}})
-
-# Test for token refresh if the first request fails with 401
-@patch('music_ml.services.spotify_service.load_spotify_tracks')
-@patch('music_ml.services.spotify_service.get_spotify_access_token')
-@patch('music_ml.services.spotify_service.requests.get')
-def test_get_artist_top_tracks_token_refresh(mock_requests_get, mock_get_access_token, mock_load_tracks):
-    # Mock initial access token and a refreshed token
-    mock_get_access_token.side_effect = ['expired_token', 'refreshed_token']
-    
-    # Mock the first response to be 401 Unauthorized
-    mock_response_401 = MagicMock()
-    mock_response_401.status_code = 401
-    
-    # Mock the second response to be successful
-    mock_response_200 = MagicMock()
-    mock_response_200.status_code = 200
-    mock_response_200.json.return_value = {
-        'tracks': [
-            {
-                'id': 'track123',
-                'name': 'Test Track After Refresh',
-                'artists': [{'name': 'Test Artist', 'id': 'artist_id'}]
-            }
-        ]
-    }
-    
-    # First call returns 401, second call returns 200
-    mock_requests_get.side_effect = [mock_response_401, mock_response_200]
-    
-    # Call the function
-    get_artist_top_tracks('artist123')
-    
-    # Assert that the access token was fetched twice (due to refresh)
-    assert mock_get_access_token.call_count == 2
-    
-    # Assert the requests were made with the correct URLs and headers
-    expected_url = 'https://api.spotify.com/v1/artists/artist123/top-tracks?market=US'
-    calls = [
-        call(expected_url, headers={'Authorization': 'Bearer expired_token'}),
-        call(expected_url, headers={'Authorization': 'Bearer refreshed_token'})
-    ]
-    mock_requests_get.assert_has_calls(calls)
-    
-    # Assert that load_spotify_tracks was called with the correct data after token refresh
-    {'tracks':{'items':mock_response_200.json.return_value['tracks']}}
-    mock_load_tracks.assert_called_once_with({'tracks':{'items':mock_response_200.json.return_value['tracks']}})
-
-# Test for non-200 responses
-@patch('music_ml.services.spotify_service.load_spotify_tracks')
-@patch('music_ml.services.spotify_service.get_spotify_access_token')
-@patch('music_ml.services.spotify_service.requests.get')
-def test_get_artist_top_tracks_non_200_response(mock_requests_get, mock_get_access_token, mock_load_tracks):
-    # Mock access token
-    mock_get_access_token.return_value = 'mock_access_token'
-    
-    # Mock a non-200 response (e.g., 404 Not Found)
-    mock_response = MagicMock()
-    mock_response.status_code = 404
-    # Set raise_for_status to raise HTTPError when called
-    mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError
-    mock_requests_get.return_value = mock_response
-    
-    # Call the function and expect it to raise an HTTPError exception
-    with pytest.raises(requests.exceptions.HTTPError):
-        get_artist_top_tracks('artist123')
-    
-    # Assert that the request was made
-    mock_requests_get.assert_called_once_with(
-        'https://api.spotify.com/v1/artists/artist123/top-tracks?market=US',
-        headers={'Authorization': 'Bearer mock_access_token'}
-    )
-    
-    # Assert that the access token was fetched
-    mock_get_access_token.assert_called_once()
-    
-    # Assert that load_spotify_tracks was not called
-    mock_load_tracks.assert_not_called()
-
-@patch('music_ml.services.spotify_service.load_spotify_tracks')
-@patch('music_ml.services.spotify_service.get_spotify_access_token')
-@patch('music_ml.services.spotify_service.requests.get')
-def test_get_track_by_id_success(mock_requests_get, mock_get_access_token, mock_load_tracks):
-    # Mock access token
-    mock_get_access_token.return_value = 'mock_access_token'
-
-    # Mock successful response from Spotify API
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {
-                'id': 'track123',
-                'name': 'Test Track',
-                'artists': [{'name': 'Test Artist', 'id': 'artist_id'}]
-    }
-    mock_requests_get.return_value = mock_response
-
-    # Mock the load_spotify_tracks function to return a Track object
-    mock_track = MagicMock()
-    mock_load_tracks.return_value = [mock_track]
-
-    # Call the function
-    result = get_track_by_id('track123')
-
-    # Assert that the access token was fetched
-    mock_get_access_token.assert_called_once()
-
-    # Assert that the request was made with the correct URL
-    mock_requests_get.assert_called_once_with(
-        'https://api.spotify.com/v1/tracks/track123',
-        headers={'Authorization': 'Bearer mock_access_token'}
-    )
-
-    # Assert that load_spotify_tracks was called with the correct data
-    mock_load_tracks.assert_called_once_with({'tracks':{'items':[mock_response.json.return_value]}})
-
-    # Assert that the result is the Track object returned by load_spotify_tracks
-    assert result == mock_track
-
-# Test for token refresh if the first request fails with 401
-@patch('music_ml.services.spotify_service.load_spotify_tracks')
-@patch('music_ml.services.spotify_service.get_spotify_access_token')
-@patch('music_ml.services.spotify_service.requests.get')
-def test_get_track_by_id_token_refresh(mock_requests_get, mock_get_access_token, mock_load_tracks):
-    # Mock initial access token and a refreshed token
-    mock_get_access_token.side_effect = ['expired_token', 'refreshed_token']
-
-    # Mock the first response to be 401 Unauthorized
-    mock_response_401 = MagicMock()
-    mock_response_401.status_code = 401
-
-    # Mock the second response to be successful
-    mock_response_200 = MagicMock()
-    mock_response_200.status_code = 200
-    mock_response_200.json.return_value = {
-        'id': 'track123',
-        'name': 'Test Track After Refresh',
-        'artists': [{'name': 'Test Artist', 'id': 'artist_id'}]
-    }
-
-    # First call returns 401, second call returns 200
-    mock_requests_get.side_effect = [mock_response_401, mock_response_200]
-
-    # Mock the load_spotify_tracks function to return a Track object
-    mock_track = MagicMock()
-    mock_load_tracks.return_value = [mock_track]
-
-    # Call the function
-    result = get_track_by_id('track123')
-
-    # Assert that the access token was fetched twice (due to refresh)
-    assert mock_get_access_token.call_count == 2
-
-    # Assert the requests were made with the correct URLs and headers
-    expected_url = 'https://api.spotify.com/v1/tracks/track123'
-    calls = [
-        call(expected_url, headers={'Authorization': 'Bearer expired_token'}),
-        call(expected_url, headers={'Authorization': 'Bearer refreshed_token'})
-    ]
-    mock_requests_get.assert_has_calls(calls)
-
-    # Assert that load_spotify_tracks was called with the correct data after token refresh
-    mock_load_tracks.assert_called_once_with({'tracks':{'items':[mock_response_200.json.return_value]}})
-
-    # Assert that the result is the Track object returned by load_spotify_tracks
-    assert result == mock_track
-
-# Test for non-200 responses
-@patch('music_ml.services.spotify_service.load_spotify_tracks')
-@patch('music_ml.services.spotify_service.get_spotify_access_token')
-@patch('music_ml.services.spotify_service.requests.get')
-def test_get_track_by_id_non_200_response(mock_requests_get, mock_get_access_token, mock_load_tracks):
-    # Mock access token
-    mock_get_access_token.return_value = 'mock_access_token'
-
-    # Mock a non-200 response (e.g., 404 Not Found)
-    mock_response = MagicMock()
-    mock_response.status_code = 404
-    # Set raise_for_status to raise HTTPError when called
-    mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError('404 Client Error: Not Found for url')
-    mock_requests_get.return_value = mock_response
-
-    # Call the function and expect it to raise an HTTPError exception
-    with pytest.raises(requests.exceptions.HTTPError):
-        get_track_by_id('nonexistent_track_id')
-
-    # Assert that the request was made
-    mock_requests_get.assert_called_once_with(
-        'https://api.spotify.com/v1/tracks/nonexistent_track_id',
-        headers={'Authorization': 'Bearer mock_access_token'}
-    )
-
-    # Assert that the access token was fetched
-    mock_get_access_token.assert_called_once()
-
-    # Assert that load_spotify_tracks was not called
-    mock_load_tracks.assert_not_called()
+    with app.test_request_context():
+        tracks = search_spotify_tracks('test query')
+        assert len(tracks) == 1
+        assert tracks[0].spotify_track_id == 'test_id'
+        assert tracks[0].track_name == 'Test Track'

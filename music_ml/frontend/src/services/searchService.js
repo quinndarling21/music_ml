@@ -14,7 +14,7 @@ export const searchSongs = async (query, limit = 10) => {
 
     return response.data;
   } catch (error) {
-    console.error("Error fetching search results:", error.response ? error.response.data : error.message);
+    console.error("Error fetching search results:", error.response?.data || error.message);
     throw error;
   }
 };
