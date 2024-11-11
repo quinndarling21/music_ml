@@ -2,6 +2,7 @@ import pytest
 from flask import Flask, session
 from unittest.mock import patch, MagicMock
 from music_ml.api.auth import auth_bp
+import os
 
 @pytest.fixture
 def app():
@@ -9,6 +10,8 @@ def app():
     app.config['SECRET_KEY'] = 'test_secret_key'
     app.config['TESTING'] = True
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    # Mock environment variables needed for redirect
+    os.environ['FRONTEND_URL'] = 'http://localhost:3000'
     return app
 
 @pytest.fixture
@@ -29,11 +32,8 @@ def test_login_endpoint(client):
 def test_callback_error(client):
     """Test callback endpoint with error parameter"""
     response = client.get('/api/auth/callback?error=access_denied')
-    assert response.status_code == 400
-    
-    data = response.get_json()
-    assert 'error' in data
-    assert data['error'] == 'access_denied'
+    assert response.status_code == 302  # Now expecting redirect
+    assert 'error=access_denied' in response.location  # Verify error param is passed to frontend
 
 @patch('music_ml.api.auth.requests.post')
 def test_callback_success(mock_post, client):

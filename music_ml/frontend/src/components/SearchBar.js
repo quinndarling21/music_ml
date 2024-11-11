@@ -6,33 +6,44 @@ const SearchBar = ({ query, setQuery, onSearch }) => {
     <Box
       sx={{
         display: 'flex',
-        gap: 2, // Adds space between the input and button
+        gap: 2,
         alignItems: 'center',
-        marginBottom: 2, // Adds space below the search bar
+        marginBottom: 2,
       }}
     >
       <TextField
-        label="Search for a song"
+        placeholder="Search for a song"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         fullWidth
         variant="outlined"
-        InputLabelProps={{
-          style: { color: '#b3b3b3' }, // Light gray label color
-        }}
+        size="small"
         InputProps={{
-          style: { color: 'white' }, // White text input color
+          sx: {
+            color: 'white',
+            backgroundColor: 'rgba(255,255,255,0.1)',
+            '&:hover': {
+              backgroundColor: 'rgba(255,255,255,0.15)',
+            },
+            '&.Mui-focused': {
+              backgroundColor: 'rgba(255,255,255,0.1)',
+            },
+            '& input::placeholder': {
+              color: 'rgba(255,255,255,0.7)',
+              opacity: 1,
+            },
+          }
         }}
         sx={{
           '& .MuiOutlinedInput-root': {
             '& fieldset': {
-              borderColor: '#b3b3b3', // Light gray border
+              borderColor: '#404040',
             },
             '&:hover fieldset': {
-              borderColor: 'white', // White border on hover
+              borderColor: '#666',
             },
             '&.Mui-focused fieldset': {
-              borderColor: 'white', // White border when focused
+              borderColor: '#fff',
             },
           },
         }}
@@ -41,10 +52,11 @@ const SearchBar = ({ query, setQuery, onSearch }) => {
         variant="contained"
         onClick={onSearch}
         sx={{
-          backgroundColor: '#1c1c1c', // Dark button background
-          color: 'white', // White text
+          backgroundColor: '#1c1c1c',
+          color: 'white',
+          minWidth: '100px',
           '&:hover': {
-            backgroundColor: '#333333', // Slightly lighter on hover
+            backgroundColor: '#333333',
           },
         }}
       >

@@ -7,6 +7,7 @@ class Track:
     spotify_track_id: str
     track_name: str
     artist: Artist
+    album_image_url: Optional[str] = None
     genre: Optional[str] = None
     tempo: Optional[float] = 0.0
     energy: Optional[float]= 0.0

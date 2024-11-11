@@ -54,18 +54,27 @@ def load_spotify_artist(spotify_artist_json: json) -> Artist:
         spotify_artist_id=spotify_artist_json['id']
     )
     
-def load_spotify_tracks(spotify_response_json: json) -> List[Track]:
-    tracks = [
-            Track(
-                spotify_track_id=item['id'],
-                track_name=item['name'],
-                artist=load_spotify_artist(item['artists'][0]),
-                genre="",  # Spotify API doesn't return genre directly, so you may add a placeholder
-                tempo=0.0,  # Placeholder, update if this info is available
-                energy=0.0,
-                valence=0.0,
-                danceability=0.0
-            )
-            for item in spotify_response_json['tracks']['items']
-        ]
+def load_spotify_tracks(data):
+    """Load tracks from Spotify API response."""
+    tracks = []
+    for item in data['tracks']['items']:
+        artist = Artist(
+            spotify_artist_id=item['artists'][0]['id'],
+            name=item['artists'][0]['name']
+        )
+        
+        # Get the album image (medium size)
+        album_image_url = None
+        if item['album']['images'] and len(item['album']['images']) > 1:
+            album_image_url = item['album']['images'][1]['url']  # Medium size image
+        elif item['album']['images']:
+            album_image_url = item['album']['images'][0]['url']  # Fallback to any available image
+
+        track = Track(
+            spotify_track_id=item['id'],
+            track_name=item['name'],
+            artist=artist,
+            album_image_url=album_image_url
+        )
+        tracks.append(track)
     return tracks

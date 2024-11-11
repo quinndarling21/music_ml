@@ -3,22 +3,42 @@ import { Card, CardContent, Typography, CardActionArea, Box } from "@mui/materia
 
 const SongList = ({ songs = [], onSongSelect }) => {
   return (
-    <Box sx={{ padding: 2 }}>
+    <Box sx={{ 
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 1  // Reduced gap between cards
+    }}>
       {songs.map((song) => (
         <Card
           key={song.spotify_track_id}
           sx={{
-            backgroundColor: '#34353b', // Dark background
-            color: 'white', // Light text color
-            marginBottom: 2, // Add space between cards
+            backgroundColor: '#34353b',
+            color: 'white',
+            '&:hover': {
+              backgroundColor: '#404040',
+            }
           }}
         >
           <CardActionArea onClick={() => onSongSelect(song)}>
-            <CardContent>
-              <Typography gutterBottom variant="h6" component="div" sx={{ color: 'white' }}>
+            <CardContent sx={{ py: 1 }}>  {/* Reduced padding */}
+              <Typography 
+                variant="body1" 
+                component="div" 
+                sx={{ 
+                  color: 'white',
+                  fontSize: '0.9rem',  // Slightly smaller font
+                  fontWeight: 500
+                }}
+              >
                 {song.track_name}
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ color: '#b3b3b3' }}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#b3b3b3',
+                  fontSize: '0.8rem'  // Smaller font for artist
+                }}
+              >
                 {song.artist.name}
               </Typography>
             </CardContent>

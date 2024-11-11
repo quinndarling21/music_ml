@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 import "./App.css";
-import SearchBar from "./components/SearchBar";
-import SongList from "./components/SongList";
+import Header from "./components/Header";
+import SearchSection from "./components/SearchSection";
+import PlaylistSection from "./components/PlaylistSection";
 import SelectedSong from "./components/SelectedSong";
-import SpotifyLoginButton from "./components/SpotifyLoginButton";
 import SpotifyCallback from "./components/SpotifyCallback";
 import { searchSongs } from "./services/searchService";
 import { generatePlaylist } from "./services/generatePlaylist";
 import { authService } from "./services/authService";
-import { Typography, Box, Button } from "@mui/material";
+import { Typography, Box, Button, Container, Grid, Paper } from "@mui/material";
 
 const AppContent = () => {
   const [query, setQuery] = useState("");
   const [songs, setSongs] = useState([]);
   const [selectedSong, setSelectedSong] = useState(null);
-  const [playlist, setPlaylist] = useState([]);
+  const [playlist, setPlaylist] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
 
@@ -58,76 +58,109 @@ const AppContent = () => {
     }
   };
 
-  const handleBackToSearch = () => {
-    setPlaylist([]);
-    setSelectedSong(null);
-  };
-
   return (
-    <div className="App">
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 2 }}>
-        <Typography variant="h4">
-          Playlist Generator
-        </Typography>
-        <SpotifyLoginButton 
-          isAuthenticated={isAuthenticated}
-          onLogoutSuccess={() => setIsAuthenticated(false)}
-        />
-      </Box>
-
-      <Typography variant="h6" gutterBottom>
-        Generate a playlist that matches the vibe of a single song.
-      </Typography>
-
-      <SelectedSong song={selectedSong} />
-
-      <Box sx={{ display: 'flex', justifyContent: 'center', marginY: 3 }}>
-        <Button
-          variant="contained"
-          sx={{
-            background: 'linear-gradient(145deg, #b5b5b5, #8c8c8c)',
-            color: '#fff',
-            border: '1px solid #d4d4d4',
-            borderRadius: '5px',
-            paddingX: 4,
-            paddingY: 1.5,
-            boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.2)',
-            textTransform: 'none',
-            fontSize: '16px',
-            '&:hover': {
-              background: 'linear-gradient(145deg, #c2c2c2, #7e7e7e)',
-              boxShadow: '0px 6px 8px rgba(0, 0, 0, 0.3)',
-            },
+    <Box sx={{ 
+      height: '100vh', 
+      display: 'flex', 
+      flexDirection: 'column',
+      overflow: 'hidden' // Prevent body scroll
+    }}>
+      <Header 
+        isAuthenticated={isAuthenticated}
+        onLogoutSuccess={() => setIsAuthenticated(false)}
+      />
+      
+      <Box sx={{ 
+        flex: 1,
+        backgroundColor: '#121212',
+        overflow: 'hidden' // Prevent content scroll
+      }}>
+        <Container 
+          maxWidth="xl" 
+          sx={{ 
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            pt: 4
           }}
-          onClick={handleGeneratePlaylist}
         >
-          Generate Playlist
-        </Button>
-      </Box>
-
-      {playlist.length === 0 ? (
-        <Box sx={{ border: '1px solid #b3b3b3', borderRadius: 2, padding: 2, marginTop: 4 }}>
-          <SearchBar query={query} setQuery={setQuery} onSearch={handleSearch} />
-          <SongList songs={songs} onSongSelect={handleSongSelect} />
-        </Box>
-      ) : (
-        <Box sx={{ border: '1px solid #b3b3b3', borderRadius: 2, padding: 2, marginTop: 4 }}>
-          <Typography variant="h6" gutterBottom>
-            Generated Playlist
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              color: 'rgba(255,255,255,0.7)', 
+              mb: 4,
+              flexShrink: 0 // Prevent title from shrinking
+            }}
+          >
+            Generate a playlist that matches the vibe of a single song.
           </Typography>
-          <SongList songs={playlist['tracks']} onSongSelect={handleSongSelect} />
-          <Box sx={{ display: 'flex', justifyContent: 'center', marginY: 2 }}>
-            <Button
-              variant="outlined"
-              onClick={handleBackToSearch}
-              sx={{ textTransform: 'none' }}
+
+          <Box sx={{ 
+            display: 'flex', 
+            gap: 4,
+            flex: 1,
+            overflow: 'hidden' // Contain the scrolling areas
+          }}>
+            {/* Left Sidebar */}
+            <Paper
+              elevation={6}
+              sx={{
+                width: '40%',
+                backgroundColor: '#282828',
+                borderRadius: 2,
+                p: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 3,
+                overflow: 'hidden' // Handle overflow within the sidebar
+              }}
             >
-              Back to Search
-            </Button>
+              {/* Selected Song Section */}
+              <Box sx={{ 
+                border: '1px solid #404040',
+                borderRadius: 2,
+                backgroundColor: selectedSong ? '#654873' : 'transparent',
+                transition: 'background-color 0.3s ease',  // Smooth transition
+                flexShrink: 0, // Prevent shrinking
+                overflow: 'hidden' // Contain everything inside
+              }}>
+                <SelectedSong 
+                  song={selectedSong} 
+                  onGeneratePlaylist={handleGeneratePlaylist}
+                />
+              </Box>
+
+              {/* Search Section */}
+              <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                <SearchSection 
+                  query={query}
+                  setQuery={setQuery}
+                  onSearch={handleSearch}
+                  songs={songs}
+                  onSongSelect={handleSongSelect}
+                  selectedSong={selectedSong}
+                />
+              </Box>
+            </Paper>
+
+            {/* Right Content Area - Generated Playlist */}
+            <Box sx={{ 
+              flex: 1,
+              backgroundColor: '#121212',
+              borderRadius: 2,
+              p: 2,
+              overflow: 'hidden' // Handle overflow within playlist area
+            }}>
+              <PlaylistSection 
+                playlist={playlist}
+                onSongSelect={handleSongSelect}
+                isAuthenticated={isAuthenticated}
+              />
+            </Box>
           </Box>
-        </Box>
-      )}
-    </div>
+        </Container>
+      </Box>
+    </Box>
   );
 };
 

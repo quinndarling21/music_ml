@@ -65,7 +65,14 @@ def test_search_spotify_tracks_success(mock_get_headers, mock_get, app):
                 {
                     'id': 'test_id',
                     'name': 'Test Track',
-                    'artists': [{'id': 'artist_id', 'name': 'Test Artist'}]
+                    'artists': [{'id': 'artist_id', 'name': 'Test Artist'}],
+                    'album': {
+                        'images': [
+                            {'url': 'large.jpg', 'height': 640, 'width': 640},
+                            {'url': 'medium.jpg', 'height': 300, 'width': 300},
+                            {'url': 'small.jpg', 'height': 64, 'width': 64}
+                        ]
+                    }
                 }
             ]
         }
@@ -77,3 +84,6 @@ def test_search_spotify_tracks_success(mock_get_headers, mock_get, app):
         assert len(tracks) == 1
         assert tracks[0].spotify_track_id == 'test_id'
         assert tracks[0].track_name == 'Test Track'
+        assert tracks[0].artist.name == 'Test Artist'
+        assert tracks[0].artist.spotify_artist_id == 'artist_id'
+        assert tracks[0].album_image_url == 'medium.jpg'  # Verify album image URL

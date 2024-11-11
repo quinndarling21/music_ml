@@ -25,7 +25,7 @@ def generate_playlist():
         artist_matcher = ArtistMatcher()
 
         # Get matching tracks
-        matching_tracks = artist_matcher.match(input_track, n=9)
+        matching_tracks = artist_matcher.match(input_track, n=19)
 
         # Create playlist including the original track
         playlist_tracks = [input_track] + matching_tracks
