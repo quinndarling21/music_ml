@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 from flask import Flask, request
 from flask_cors import CORS
+from flask_talisman import Talisman
 from music_ml.api.search import search_bp
 from music_ml.api.generate_playlist import playlist_bp
 from music_ml.api.auth import auth_bp
@@ -38,6 +39,25 @@ ALLOWED_ORIGINS = [
     'https://musaic-backend-3d46a4f2ff11.herokuapp.com'
 ]
 
+# Initialize Talisman for HTTPS
+talisman = Talisman(
+    app,
+    force_https=True,
+    content_security_policy={
+        'default-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https:', 'data:'],
+        'img-src': ["'self'", 'https:', 'data:'],
+        'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        'style-src': ["'self'", "'unsafe-inline'"],
+        'frame-ancestors': ["'none'"]
+    },
+    content_security_policy_nonce_in=['script-src'],
+    feature_policy={
+        'geolocation': "'none'",
+        'microphone': "'none'",
+        'camera': "'none'"
+    }
+)
+
 # Update CORS configuration
 CORS(app, 
      origins=ALLOWED_ORIGINS,
@@ -46,7 +66,6 @@ CORS(app,
      expose_headers=["Set-Cookie", "Access-Control-Allow-Credentials"],
      methods=["GET", "POST", "OPTIONS"])
 
-# Add CORS headers to all responses
 @app.after_request
 def after_request(response):
     origin = request.headers.get('Origin')
@@ -55,6 +74,7 @@ def after_request(response):
         response.headers.add('Access-Control-Allow-Credentials', 'true')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
         response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        response.headers.add('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
     return response
 
 # Register blueprints at the root level
