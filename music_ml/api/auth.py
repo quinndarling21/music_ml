@@ -1,5 +1,5 @@
 import os
-from flask import Blueprint, redirect, request, session, url_for, jsonify
+from flask import Blueprint, redirect, request, session, url_for, jsonify, current_app
 import requests
 from urllib.parse import urlencode
 import logging
@@ -15,6 +15,12 @@ logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv(override=True)  # Force reload environment variables
+
+def init_session_config(app):
+    app.secret_key = os.getenv('FLASK_SECRET_KEY')  # Make sure this is set in .env
+    app.config['SESSION_COOKIE_SECURE'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
@@ -55,6 +61,9 @@ def login():
 @auth_bp.route('/callback')
 def callback():
     """Handle the callback from Spotify"""
+    logger.debug(f"Callback received with headers: {dict(request.headers)}")
+    logger.debug(f"Session before processing: {session}")
+    
     error = request.args.get('error')
     code = request.args.get('code')
     
@@ -99,6 +108,7 @@ def callback():
         # Redirect to frontend with success
         redirect_url = f"{FRONTEND_URL}/callback?success=true"
         logger.debug(f"Redirecting to: {redirect_url}")
+        logger.debug(f"Session after processing: {session}")
         return redirect(redirect_url)
 
     except requests.exceptions.RequestException as e:
@@ -112,8 +122,10 @@ def callback():
 @auth_bp.route('/check-auth')
 def check_auth():
     """Check if user is authenticated"""
+    logger.debug(f"Session contents: {session}")
+    logger.debug(f"Request cookies: {request.cookies}")
     is_authenticated = 'access_token' in session
-    logging.info(f"Auth check - authenticated: {is_authenticated}")
+    logger.debug(f"Auth check - authenticated: {is_authenticated}")
     return jsonify({'authenticated': is_authenticated})
 
 @auth_bp.route('/logout')

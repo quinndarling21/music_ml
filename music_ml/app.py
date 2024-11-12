@@ -27,7 +27,6 @@ app.config.update(
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='None',
-    SESSION_COOKIE_DOMAIN=None,
 )
 
 # Get allowed origins from environment or use defaults
@@ -48,7 +47,8 @@ talisman = Talisman(
         'img-src': ["'self'", 'https:', 'data:'],
         'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
         'style-src': ["'self'", "'unsafe-inline'"],
-        'frame-ancestors': ["'none'"]
+        'frame-ancestors': ["'none'"],
+        'connect-src': ["'self'", "https://api.spotify.com"],
     },
     content_security_policy_nonce_in=['script-src'],
     feature_policy={
@@ -62,20 +62,8 @@ talisman = Talisman(
 CORS(app, 
      origins=ALLOWED_ORIGINS,
      supports_credentials=True,
-     allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
-     expose_headers=["Set-Cookie", "Access-Control-Allow-Credentials"],
+     allow_headers=["Content-Type", "Authorization"],
      methods=["GET", "POST", "OPTIONS"])
-
-@app.after_request
-def after_request(response):
-    origin = request.headers.get('Origin')
-    if origin in ALLOWED_ORIGINS:
-        response.headers.add('Access-Control-Allow-Origin', origin)
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        response.headers.add('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
-    return response
 
 # Register blueprints at the root level
 app.register_blueprint(search_bp)
