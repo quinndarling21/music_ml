@@ -105,3 +105,8 @@ pip-wheel-metadata/
 
 # Local env and sensitive information
 .env
+
+# SQLite database
+*.db
+instance/
+music_ml/instance/
