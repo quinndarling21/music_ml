@@ -19,22 +19,22 @@ app = Flask(__name__)
 
 # Database configuration
 if os.getenv('FLASK_ENV') == 'development':
-    # Use SQLite for local development
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dev.db'
 else:
-    # Use PostgreSQL for production
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', '').replace('postgres://', 'postgresql://')
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Session configuration
 app.config.update(
-    SECRET_KEY=os.getenv('SECRET_KEY') or secrets.token_hex(32),
+    SECRET_KEY=os.getenv('FLASK_SECRET_KEY', 'dev-secret-key'),
     SESSION_TYPE='sqlalchemy',
     PERMANENT_SESSION_LIFETIME=timedelta(hours=24),
+    SESSION_COOKIE_NAME='spotify_auth_session',
     SESSION_COOKIE_SECURE=False if os.getenv('FLASK_ENV') == 'development' else True,
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='None'
+    SESSION_COOKIE_SAMESITE='Lax' if os.getenv('FLASK_ENV') == 'development' else 'None',
+    SESSION_COOKIE_DOMAIN='127.0.0.1' if os.getenv('FLASK_ENV') == 'development' else None
 )
 
 # Initialize SQLAlchemy
@@ -65,22 +65,22 @@ CORS(app,
      expose_headers=["Set-Cookie"],
      methods=["GET", "POST", "OPTIONS"])
 
-# Add these security headers
 @app.after_request
-def add_security_headers(response):
-    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
-    # More permissive CSP
-    response.headers['Content-Security-Policy'] = "default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'"
+def after_request(response):
+    if os.getenv('FLASK_ENV') == 'development':
+        response.headers.add('Access-Control-Allow-Origin', 'http://127.0.0.1:3000')
+    else:
+        response.headers.add('Access-Control-Allow-Origin', 'https://musaic-frontend-7a12a4566f21.herokuapp.com')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     return response
 
-# Import blueprints after app creation
+# Import and register blueprints
 from music_ml.api.search import search_bp
 from music_ml.api.generate_playlist import playlist_bp
 from music_ml.api.auth import auth_bp
 
-# Register blueprints
 app.register_blueprint(search_bp)
 app.register_blueprint(playlist_bp)
 app.register_blueprint(auth_bp)

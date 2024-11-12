@@ -22,21 +22,6 @@ export const authService = {
     }
   },
 
-  async processCallback(code) {
-    try {
-      const response = await axios.get(`${API_URL}/api/auth/callback?code=${code}`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        withCredentials: true
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Error processing callback:", error.response?.data || error.message);
-      throw error;
-    }
-  },
-
   async checkAuthStatus() {
     try {
       console.log('Making request to:', `${API_URL}/api/auth/check-auth`);

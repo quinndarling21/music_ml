@@ -81,11 +81,11 @@ def callback():
     
     if error:
         logger.error(f"Spotify auth error: {error}")
-        return redirect(f"{FRONTEND_URL}/callback?error={error}")
+        return redirect(f"{FRONTEND_URL}?error={error}")
 
     if not code:
         logger.error("No code received from Spotify")
-        return redirect(f"{FRONTEND_URL}/callback?error=no_code")
+        return redirect(f"{FRONTEND_URL}?error=no_code")
 
     try:
         # Exchange the code for access token
@@ -113,29 +113,33 @@ def callback():
         session['token_expiry'] = token_info['expires_in']
 
         logger.debug("Successfully stored tokens in session")
-        
-        # Redirect to frontend with success
-        redirect_url = f"{FRONTEND_URL}/callback?success=true"
-        logger.debug(f"Redirecting to: {redirect_url}")
-        logger.debug(f"Session after processing: {session}")
-        return redirect(redirect_url)
+        return redirect(f"{FRONTEND_URL}?success=true")
 
     except requests.exceptions.RequestException as e:
         logger.error(f"Token exchange error: {str(e)}")
         logger.error(f"Response content: {getattr(response, 'text', 'No response content')}")
-        return redirect(f"{FRONTEND_URL}/callback?error=token_exchange_failed")
+        return redirect(f"{FRONTEND_URL}?error=token_exchange_failed")
     except Exception as e:
         logger.error(f"Unexpected error in callback: {str(e)}", exc_info=True)
-        return redirect(f"{FRONTEND_URL}/callback?error=unexpected_error")
+        return redirect(f"{FRONTEND_URL}?error=unexpected_error")
 
 @auth_bp.route('/check-auth')
 def check_auth():
     """Check if user is authenticated"""
+    logger.debug("Check-auth endpoint accessed")
     logger.debug(f"Session contents: {session}")
     logger.debug(f"Request cookies: {request.cookies}")
+    logger.debug(f"Request headers: {dict(request.headers)}")
+    
     is_authenticated = 'access_token' in session
-    logger.debug(f"Auth check - authenticated: {is_authenticated}")
-    return jsonify({'authenticated': is_authenticated})
+    logger.debug(f"Is authenticated: {is_authenticated}")
+    
+    if is_authenticated:
+        logger.debug("User is authenticated")
+        return jsonify({'authenticated': True})
+    else:
+        logger.debug("User is not authenticated")
+        return jsonify({'authenticated': False})
 
 @auth_bp.route('/logout')
 def logout():

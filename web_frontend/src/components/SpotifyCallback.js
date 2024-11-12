@@ -10,41 +10,47 @@ const SpotifyCallback = () => {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Log the full URL and search params
         console.log('Callback URL:', window.location.href);
         console.log('Location search:', location.search);
         
-        // Get the parameters
         const params = new URLSearchParams(location.search);
         const error = params.get('error');
-        const success = params.get('success');
+        const code = params.get('code');
 
         if (error) {
           console.error('Spotify auth error:', error);
-          navigate('/');
+          navigate('/?error=' + encodeURIComponent(error));
           return;
         }
 
-        if (!success) {
-          console.error('Authentication not successful');
-          navigate('/');
+        if (!code) {
+          console.error('No authorization code received');
+          navigate('/?error=no_code');
           return;
         }
 
-        // Check if authentication was successful
-        console.log('Checking auth status...');
-        const isAuthenticated = await authService.checkAuthStatus();
-        console.log('Auth status:', isAuthenticated);
-        
-        if (isAuthenticated) {
-          navigate('/');
+        console.log('Processing authorization code...');
+        const response = await authService.processCallback(code);
+        console.log('Callback response:', response);
+
+        if (response.success) {
+          console.log('Checking auth status...');
+          const isAuthenticated = await authService.checkAuthStatus();
+          console.log('Auth status:', isAuthenticated);
+          
+          if (isAuthenticated) {
+            navigate('/?success=true');
+          } else {
+            console.error('Authentication failed');
+            navigate('/?error=auth_failed');
+          }
         } else {
-          console.error('Authentication failed');
-          navigate('/');
+          console.error('Callback processing failed');
+          navigate('/?error=callback_failed');
         }
       } catch (error) {
         console.error('Callback error:', error);
-        navigate('/');
+        navigate('/?error=' + encodeURIComponent(error.message));
       }
     };
 
