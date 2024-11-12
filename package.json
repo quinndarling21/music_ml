@@ -1,5 +1,8 @@
 {
-  "dependencies": {
-    "protoc-gen-js": "^3.21.2"
-  }
+  "name": "musaic",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "web_frontend"
+  ]
 }

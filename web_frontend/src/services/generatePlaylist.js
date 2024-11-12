@@ -1,8 +1,10 @@
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5000';
+
 export const generatePlaylist = async (spotifyTrackId) => {
   try {
-    const response = await axios.get("http://127.0.0.1:5000/generate_playlist", {
+    const response = await axios.get(`${API_URL}/generate_playlist`, {
       params: {
         spotify_track_id: spotifyTrackId,
       },
@@ -21,7 +23,7 @@ export const generatePlaylist = async (spotifyTrackId) => {
 export const exportPlaylist = async (tracks) => {
   try {
     const response = await axios.post(
-      "http://127.0.0.1:5000/api/auth/export-playlist",
+      `${API_URL}/api/auth/export-playlist`,
       { tracks },
       {
         headers: {

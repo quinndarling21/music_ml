@@ -1,12 +1,14 @@
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5000';
+
 // Configure axios defaults
 axios.defaults.withCredentials = true;
 
 export const authService = {
   async getLoginUrl() {
     try {
-      const response = await axios.get("http://127.0.0.1:5000/api/auth/login", {
+      const response = await axios.get(`${API_URL}/api/auth/login`, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -21,7 +23,7 @@ export const authService = {
 
   async processCallback(code) {
     try {
-      const response = await axios.get(`http://127.0.0.1:5000/api/auth/callback?code=${code}`, {
+      const response = await axios.get(`${API_URL}/api/auth/callback?code=${code}`, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -36,7 +38,7 @@ export const authService = {
 
   async checkAuthStatus() {
     try {
-      const response = await axios.get("http://127.0.0.1:5000/api/auth/check-auth", {
+      const response = await axios.get(`${API_URL}/api/auth/check-auth`, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -51,7 +53,7 @@ export const authService = {
 
   async logout() {
     try {
-      await axios.get("http://127.0.0.1:5000/api/auth/logout", {
+      await axios.get(`${API_URL}/api/auth/logout`, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -65,7 +67,7 @@ export const authService = {
 
   async getUserInfo() {
     try {
-      const response = await axios.get("http://127.0.0.1:5000/api/auth/me", {
+      const response = await axios.get(`${API_URL}/api/auth/me`, {
         headers: {
           'Content-Type': 'application/json',
         },

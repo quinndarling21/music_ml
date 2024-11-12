@@ -63,7 +63,7 @@ const AppContent = () => {
       height: '100vh', 
       display: 'flex', 
       flexDirection: 'column',
-      overflow: 'hidden' // Prevent body scroll
+      overflow: 'hidden'
     }}>
       <Header 
         isAuthenticated={isAuthenticated}
@@ -73,7 +73,7 @@ const AppContent = () => {
       <Box sx={{ 
         flex: 1,
         backgroundColor: '#121212',
-        overflow: 'hidden' // Prevent content scroll
+        overflow: 'hidden'
       }}>
         <Container 
           maxWidth="xl" 
@@ -89,7 +89,7 @@ const AppContent = () => {
             sx={{ 
               color: 'rgba(255,255,255,0.7)', 
               mb: 4,
-              flexShrink: 0 // Prevent title from shrinking
+              flexShrink: 0
             }}
           >
             Generate a playlist inspired by a single song.
@@ -99,7 +99,7 @@ const AppContent = () => {
             display: 'flex', 
             gap: 4,
             flex: 1,
-            overflow: 'hidden' // Contain the scrolling areas
+            overflow: 'hidden'
           }}>
             {/* Left Sidebar */}
             <Paper
@@ -112,7 +112,7 @@ const AppContent = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 3,
-                overflow: 'hidden' // Handle overflow within the sidebar
+                overflow: 'hidden'
               }}
             >
               {/* Selected Song Section */}
@@ -120,9 +120,9 @@ const AppContent = () => {
                 border: '1px solid #404040',
                 borderRadius: 2,
                 backgroundColor: selectedSong ? '#654873' : 'transparent',
-                transition: 'background-color 0.3s ease',  // Smooth transition
-                flexShrink: 0, // Prevent shrinking
-                overflow: 'hidden' // Contain everything inside
+                transition: 'background-color 0.3s ease',
+                flexShrink: 0,
+                overflow: 'hidden'
               }}>
                 <SelectedSong 
                   song={selectedSong} 
@@ -143,13 +143,13 @@ const AppContent = () => {
               </Box>
             </Paper>
 
-            {/* Right Content Area - Generated Playlist */}
+            {/* Right Content Area */}
             <Box sx={{ 
               flex: 1,
               backgroundColor: '#121212',
               borderRadius: 2,
               p: 2,
-              overflow: 'hidden' // Handle overflow within playlist area
+              overflow: 'hidden'
             }}>
               <PlaylistSection 
                 playlist={playlist}
