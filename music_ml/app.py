@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 from music_ml.api.search import search_bp
 from music_ml.api.generate_playlist import playlist_bp
@@ -27,45 +27,28 @@ app.config.update(
     SESSION_COOKIE_DOMAIN=None,
 )
 
-# Update CORS configuration with more specific settings
+# Get allowed origins from environment or use defaults
+ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://musaic-frontend-7a12a4566f21.herokuapp.com',
+    'https://musaic-frontend.herokuapp.com',
+    'https://musaic-backend-3d46a4f2ff11.herokuapp.com'
+]
+
+# Update CORS configuration
 CORS(app, 
-     origins=[
-         'http://localhost:3000',
-         'http://127.0.0.1:3000',
-         'https://musaic-frontend.herokuapp.com',
-         'https://musaic-frontend-7a12a4566f21.herokuapp.com'
-     ],
+     origins=ALLOWED_ORIGINS,
      supports_credentials=True,
      allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
      expose_headers=["Set-Cookie", "Access-Control-Allow-Credentials"],
-     methods=["GET", "POST", "OPTIONS"],
-     max_age=3600,
-     credentials=True,
-     resources={
-         r"/*": {
-             "origins": [
-                 "http://localhost:3000",
-                 "http://127.0.0.1:3000",
-                 "https://musaic-frontend.herokuapp.com",
-                 "https://musaic-frontend-7a12a4566f21.herokuapp.com"
-             ],
-             "allow_headers": ["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
-             "expose_headers": ["Set-Cookie", "Access-Control-Allow-Credentials"],
-             "supports_credentials": True
-         }
-     }
-)
+     methods=["GET", "POST", "OPTIONS"])
 
 # Add CORS headers to all responses
 @app.after_request
 def after_request(response):
     origin = request.headers.get('Origin')
-    if origin in [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'https://musaic-frontend.herokuapp.com',
-        'https://musaic-frontend-7a12a4566f21.herokuapp.com'
-    ]:
+    if origin in ALLOWED_ORIGINS:
         response.headers.add('Access-Control-Allow-Origin', origin)
         response.headers.add('Access-Control-Allow-Credentials', 'true')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
