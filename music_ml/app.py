@@ -1,10 +1,9 @@
 from dotenv import load_dotenv
 from flask import Flask, request
 from flask_cors import CORS
-from flask_talisman import Talisman
-from music_ml.api.search import search_bp
-from music_ml.api.generate_playlist import playlist_bp
-from music_ml.api.auth import auth_bp
+from flask_session import Session
+from flask_sqlalchemy import SQLAlchemy
+from datetime import timedelta
 import logging
 import os
 import secrets
@@ -18,18 +17,32 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Set the secret key for session management
-app.secret_key = os.getenv('SECRET_KEY') or secrets.token_hex(32)
-logger.debug(f"Using secret key: {'from env' if os.getenv('SECRET_KEY') else 'generated'}")
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', '').replace('postgres://', 'postgresql://')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Configure session
+# Session configuration
 app.config.update(
+    SECRET_KEY=os.getenv('SECRET_KEY') or secrets.token_hex(32),
+    SESSION_TYPE='sqlalchemy',
+    PERMANENT_SESSION_LIFETIME=timedelta(hours=24),
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='None',
+    SESSION_COOKIE_SAMESITE='None'
 )
 
-# Get allowed origins from environment or use defaults
+# Initialize SQLAlchemy
+db = SQLAlchemy(app)
+app.config['SESSION_SQLALCHEMY'] = db
+
+# Initialize Flask-Session
+Session(app)
+
+# Create tables
+with app.app_context():
+    db.create_all()
+
+# Define allowed origins
 ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
@@ -38,26 +51,6 @@ ALLOWED_ORIGINS = [
     'https://musaic-backend-3d46a4f2ff11.herokuapp.com'
 ]
 
-# Initialize Talisman for HTTPS
-talisman = Talisman(
-    app,
-    force_https=True,
-    content_security_policy={
-        'default-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https:', 'data:'],
-        'img-src': ["'self'", 'https:', 'data:'],
-        'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-        'style-src': ["'self'", "'unsafe-inline'"],
-        'frame-ancestors': ["'none'"],
-        'connect-src': ["'self'", "https://api.spotify.com"],
-    },
-    content_security_policy_nonce_in=['script-src'],
-    feature_policy={
-        'geolocation': "'none'",
-        'microphone': "'none'",
-        'camera': "'none'"
-    }
-)
-
 # Update CORS configuration
 CORS(app, 
      origins=ALLOWED_ORIGINS,
@@ -65,7 +58,12 @@ CORS(app,
      allow_headers=["Content-Type", "Authorization"],
      methods=["GET", "POST", "OPTIONS"])
 
-# Register blueprints at the root level
+# Import blueprints after app creation
+from music_ml.api.search import search_bp
+from music_ml.api.generate_playlist import playlist_bp
+from music_ml.api.auth import auth_bp
+
+# Register blueprints
 app.register_blueprint(search_bp)
 app.register_blueprint(playlist_bp)
 app.register_blueprint(auth_bp)

@@ -33,6 +33,8 @@ FRONTEND_URL = os.getenv('FRONTEND_URL')
 @auth_bp.route('/login')
 def login():
     """Redirect users to Spotify's authorization page"""
+    logger.debug("Login route accessed")
+    logger.debug(f"Current session: {session}")
     if not CLIENT_ID:
         logger.error("SPOTIFY_CLIENT_ID not set")
         return jsonify({'error': 'Spotify client ID not configured'}), 500
@@ -61,8 +63,13 @@ def login():
 @auth_bp.route('/callback')
 def callback():
     """Handle the callback from Spotify"""
+    logger.debug("Callback route accessed")
+    logger.debug(f"Current session: {session}")
     logger.debug(f"Callback received with headers: {dict(request.headers)}")
     logger.debug(f"Session before processing: {session}")
+    
+    # Make session permanent
+    session.permanent = True
     
     error = request.args.get('error')
     code = request.args.get('code')
