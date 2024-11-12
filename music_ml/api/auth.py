@@ -17,10 +17,12 @@ logger = logging.getLogger(__name__)
 load_dotenv(override=True)  # Force reload environment variables
 
 def init_session_config(app):
-    app.secret_key = os.getenv('FLASK_SECRET_KEY')  # Make sure this is set in .env
-    app.config['SESSION_COOKIE_SECURE'] = True
-    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key')  # Fallback for development
+    app.config.update(
+        SESSION_COOKIE_SECURE=False,  # Set to False for development
+        SESSION_COOKIE_SAMESITE='Lax',  # More permissive for development
+        SESSION_COOKIE_HTTPONLY=True
+    )
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 

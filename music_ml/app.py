@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
@@ -18,7 +18,13 @@ load_dotenv()
 app = Flask(__name__)
 
 # Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', '').replace('postgres://', 'postgresql://')
+if os.getenv('FLASK_ENV') == 'development':
+    # Use SQLite for local development
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dev.db'
+else:
+    # Use PostgreSQL for production
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', '').replace('postgres://', 'postgresql://')
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Session configuration
@@ -26,7 +32,7 @@ app.config.update(
     SECRET_KEY=os.getenv('SECRET_KEY') or secrets.token_hex(32),
     SESSION_TYPE='sqlalchemy',
     PERMANENT_SESSION_LIFETIME=timedelta(hours=24),
-    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SECURE=False if os.getenv('FLASK_ENV') == 'development' else True,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='None'
 )
