@@ -22,6 +22,7 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 CLIENT_ID = os.getenv('SPOTIFY_CLIENT_ID')
 CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET')
 REDIRECT_URI = os.getenv('SPOTIFY_REDIRECT_URI')
+FRONTEND_URL = os.getenv('FRONTEND_URL')
 
 @auth_bp.route('/login')
 def login():
@@ -57,13 +58,16 @@ def callback():
     error = request.args.get('error')
     code = request.args.get('code')
     
+    logger.debug(f"Callback received - Code: {code}, Error: {error}")
+    logger.debug(f"Environment variables - REDIRECT_URI: {REDIRECT_URI}, FRONTEND_URL: {FRONTEND_URL}")
+    
     if error:
-        logging.error(f"Spotify auth error: {error}")
-        return redirect(f"{os.getenv('FRONTEND_URL')}/callback?error={error}")
+        logger.error(f"Spotify auth error: {error}")
+        return redirect(f"{FRONTEND_URL}/callback?error={error}")
 
     if not code:
-        logging.error("No code received from Spotify")
-        return redirect(f"{os.getenv('FRONTEND_URL')}/callback?error=no_code")
+        logger.error("No code received from Spotify")
+        return redirect(f"{FRONTEND_URL}/callback?error=no_code")
 
     try:
         # Exchange the code for access token
@@ -76,7 +80,12 @@ def callback():
             'client_secret': CLIENT_SECRET,
         }
 
+        logger.debug(f"Making token request with payload: {payload}")
+        
         response = requests.post(token_url, data=payload)
+        logger.debug(f"Token response status: {response.status_code}")
+        logger.debug(f"Token response content: {response.text}")
+        
         response.raise_for_status()
         token_info = response.json()
         
@@ -85,13 +94,20 @@ def callback():
         session['refresh_token'] = token_info['refresh_token']
         session['token_expiry'] = token_info['expires_in']
 
+        logger.debug("Successfully stored tokens in session")
+        
         # Redirect to frontend with success
-        return redirect(f"{os.getenv('FRONTEND_URL')}/callback?success=true")
+        redirect_url = f"{FRONTEND_URL}/callback?success=true"
+        logger.debug(f"Redirecting to: {redirect_url}")
+        return redirect(redirect_url)
 
     except requests.exceptions.RequestException as e:
-        logging.error(f"Token exchange error: {str(e)}")
-        logging.error(f"Response content: {getattr(response, 'text', 'No response content')}")
-        return redirect(f"{os.getenv('FRONTEND_URL')}/callback?error=token_exchange_failed")
+        logger.error(f"Token exchange error: {str(e)}")
+        logger.error(f"Response content: {getattr(response, 'text', 'No response content')}")
+        return redirect(f"{FRONTEND_URL}/callback?error=token_exchange_failed")
+    except Exception as e:
+        logger.error(f"Unexpected error in callback: {str(e)}", exc_info=True)
+        return redirect(f"{FRONTEND_URL}/callback?error=unexpected_error")
 
 @auth_bp.route('/check-auth')
 def check_auth():

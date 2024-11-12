@@ -6,6 +6,7 @@ from music_ml.api.generate_playlist import playlist_bp
 from music_ml.api.auth import auth_bp
 import logging
 import os
+import secrets
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -17,13 +18,14 @@ load_dotenv()
 app = Flask(__name__)
 
 # Set the secret key for session management
-app.secret_key = os.getenv('SECRET_KEY')
+app.secret_key = os.getenv('SECRET_KEY') or secrets.token_hex(32)
+logger.debug(f"Using secret key: {'from env' if os.getenv('SECRET_KEY') else 'generated'}")
 
 # Configure session
 app.config.update(
-    SESSION_COOKIE_SECURE=True,  # Always use secure cookies in production
+    SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='None',  # Required for cross-site cookies
+    SESSION_COOKIE_SAMESITE='None',
     SESSION_COOKIE_DOMAIN=None,
 )
 
