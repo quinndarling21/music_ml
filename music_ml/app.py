@@ -55,8 +55,19 @@ ALLOWED_ORIGINS = [
 CORS(app, 
      origins=ALLOWED_ORIGINS,
      supports_credentials=True,
-     allow_headers=["Content-Type", "Authorization"],
+     allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
+     expose_headers=["Set-Cookie"],
      methods=["GET", "POST", "OPTIONS"])
+
+# Add these security headers
+@app.after_request
+def add_security_headers(response):
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    # More permissive CSP
+    response.headers['Content-Security-Policy'] = "default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'"
+    return response
 
 # Import blueprints after app creation
 from music_ml.api.search import search_bp
